@@ -138,29 +138,29 @@ prepareCompaction()                     // core/compaction/compaction.ts:753，�
 ```mermaid
 flowchart TD
     subgraph 检测点1["检测点 ①: agent_end 后 (_handlePostAgentRun)"]
-        A[一轮对话结束] --> B{_checkCompaction<br/>分析最后一条 assistant 消息}
+        A["一轮对话结束"] --> B{"_checkCompaction<br/>分析最后一条 assistant 消息"}
     end
     subgraph 检测点2["检测点 ②: 提交新 prompt 前 (prompt 内部)"]
-        C[用户提交新 prompt] --> B
+        C["用户提交新 prompt"] --> B
     end
     subgraph 检测点3["检测点 ③: 多轮循环每轮响应前"]
-        D[工具循环中<br/>prepareNextTurnWithContext] --> E{shouldCompact?<br/>用量 > 窗口 - 16384?}
+        D["工具循环中<br/>prepareNextTurnWithContext"] --> E{"shouldCompact?<br/>用量 > 窗口 - 16384?"}
     end
     subgraph 手动["检测点 ⓪: 手动"]
         M["/compact 指令"] --> N["AgentSession.compact()"]
     end
 
-    B --> F{是 overflow 错误<br/>或可恢复 length 截断?<br/>isContextOverflow / isRecoverableLength}
-    E --> G{shouldCompact?<br/>用量 > 窗口 − reserveTokens?}
-    F -- 是 --> H{回复已完整?<br/>stopReason == stop?}
-    F -- 否 --> G
+    B --> F{"是 overflow 错误<br/>或可恢复 length 截断?<br/>isContextOverflow / isRecoverableLength"}
+    E --> G{"shouldCompact?<br/>用量 > 窗口 - reserveTokens?"}
+    F -- "是" --> H{"回复已完整?<br/>stopReason == stop?"}
+    F -- "否" --> G
     H -- "是(已完成)" --> I["_runAutoCompaction(overflow, 不重试)"]
-    H -- "否(可重试)" --> J{已重试过一次?}
-    J -- 是 --> K[报错放弃<br/>compaction_end + 失败事件]
-    J -- 否 --> L[从 state 移除失败消息<br/>→ _runAutoCompaction(overflow, 将重试)]
-    G -- 是 --> m["_runAutoCompaction(threshold, 不重试)"]
-    G -- 否 --> Z[不压缩, 正常继续]
-    N --> P(进入图 2 执行管线)
+    H -- "否(可重试)" --> J{"已重试过一次?"}
+    J -- "是" --> K["报错放弃<br/>compaction_end + 失败事件"]
+    J -- "否" --> L["从 state 移除失败消息<br/>_runAutoCompaction(overflow, 将重试)"]
+    G -- "是" --> m["_runAutoCompaction(threshold, 不重试)"]
+    G -- "否" --> Z["不压缩, 正常继续"]
+    N --> P(["进入图 2 执行管线"])
     I --> P
     L --> P
     m --> P
